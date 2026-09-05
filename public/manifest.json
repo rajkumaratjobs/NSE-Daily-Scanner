@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Daily NSE Jewellery Scanner",
+  "short_name": "NSEJewel",
+  "description": "Daily 9:00 AM IST scanner for Indian jewellery stocks with Breakout, Earnings results, Value filters, and Gemini AI verdicts.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#020617",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

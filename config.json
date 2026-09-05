@@ -1,0 +1,72 @@
+{
+  "scan_time": "09:00",
+  "timezone": "Asia/Kolkata",
+  "cron": "0 9 * * *",
+  "stocks": [
+    {
+      "name": "Goldiam International",
+      "symbol": "GOLDIAM.NS",
+      "screener_slug": "GOLDIAM"
+    },
+    {
+      "name": "Senco Gold",
+      "symbol": "SENCO.NS",
+      "screener_slug": "SENCO"
+    },
+    {
+      "name": "Kalyan Jewellers",
+      "symbol": "KALYANKJIL.NS",
+      "screener_slug": "KALYANKJIL"
+    },
+    {
+      "name": "Titan Company",
+      "symbol": "TITAN.NS",
+      "screener_slug": "TITAN"
+    },
+    {
+      "name": "Radhika Jeweltech",
+      "symbol": "RADHIKAJWE.NS",
+      "screener_slug": "RADHIKAJWE"
+    },
+    {
+      "name": "PC Jeweller",
+      "symbol": "PCJEWELLER.NS",
+      "screener_slug": "PCJEWELLER"
+    },
+    {
+      "name": "Tribhovandas Bhimji Zaveri",
+      "symbol": "TBZ.NS",
+      "screener_slug": "TBZ"
+    },
+    {
+      "name": "Vaibhav Global",
+      "symbol": "VAIBHAVGBL.NS",
+      "screener_slug": "VAIBHAVGBL"
+    }
+  ],
+  "alert_types": {
+    "breakout": {
+      "enabled": true,
+      "price_gt_200_dma": true,
+      "volume_multiplier_20d": 2.0
+    },
+    "results": {
+      "enabled": true,
+      "sales_growth_yoy_min_pct": 15.0
+    },
+    "value": {
+      "enabled": true,
+      "pe_max": 15.0,
+      "roe_min_pct": 15.0,
+      "debt_to_equity_max": 0.5
+    }
+  },
+  "notifications": {
+    "telegram": {
+      "enabled": true
+    },
+    "whatsapp": {
+      "enabled": true
+    }
+  }
+}

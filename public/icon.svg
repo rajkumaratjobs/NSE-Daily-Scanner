@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="50%" stop-color="#EAB308" />
+      <stop offset="100%" stop-color="#CA8A04" />
+    </linearGradient>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded edges for maskable compatibility -->
+  <rect width="512" height="512" rx="100" fill="url(#bg)" />
+  <!-- Radar Scanner Waves -->
+  <circle cx="256" cy="256" r="180" stroke="#38BDF8" stroke-width="3" stroke-opacity="0.2" fill="none" />
+  <circle cx="256" cy="256" r="130" stroke="#38BDF8" stroke-width="4" stroke-opacity="0.35" fill="none" stroke-dasharray="10 10" />
+  <circle cx="256" cy="256" r="80" stroke="#38BDF8" stroke-width="4" stroke-opacity="0.5" fill="none" />
+  
+  <!-- Diamond / Jewellery Icon in Center -->
+  <g transform="translate(156, 156)">
+    <!-- Gem Facets -->
+    <polygon points="100,20 160,70 140,160 60,160 40,70" fill="url(#gold)" opacity="0.9" />
+    <polygon points="100,20 40,70 100,70" fill="#FEF08A" opacity="0.8" />
+    <polygon points="100,20 160,70 100,70" fill="#FACC15" opacity="0.8" />
+    <polygon points="40,70 100,70 60,160" fill="#EAB308" />
+    <polygon points="160,70 100,70 140,160" fill="#CA8A04" />
+    <polygon points="100,70 60,160 140,160" fill="#F59E0B" />
+    <!-- Sparkles -->
+    <circle cx="100" cy="50" r="6" fill="#FFFFFF" />
+    <circle cx="150" cy="90" r="4" fill="#FFFFFF" />
+  </g>
+
+  <!-- Stock Trend Arrow Overlay -->
+  <path d="M120 380 L220 310 L280 340 L390 230" stroke="#22C55E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+  <polygon points="390,210 400,245 365,235" fill="#22C55E" />
+</svg>
