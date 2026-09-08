@@ -48,16 +48,16 @@
     "breakout": {
       "enabled": true,
       "price_gt_200_dma": true,
-      "volume_multiplier_20d": 2.0
+      "volume_multiplier_20d": 2
     },
     "results": {
       "enabled": true,
-      "sales_growth_yoy_min_pct": 15.0
+      "sales_growth_yoy_min_pct": 15
     },
     "value": {
       "enabled": true,
-      "pe_max": 15.0,
-      "roe_min_pct": 15.0,
+      "pe_max": 15,
+      "roe_min_pct": 15,
       "debt_to_equity_max": 0.5
     }
   },
@@ -68,5 +68,6 @@
     "whatsapp": {
       "enabled": true
     }
-  }
+  },
+  "price_thresholds": {}
 }

@@ -1,7 +1,23 @@
+export interface PricePoint {
+  day: string;
+  date: string;
+  price: number;
+}
+
 export interface StockAlert {
-  type: "BREAKOUT" | "RESULTS" | "VALUE";
+  type: "BREAKOUT" | "RESULTS" | "VALUE" | "THRESHOLD";
   badge: string;
   description: string;
+}
+
+export interface PriceThresholdAlert {
+  targetPrice: number;
+  condition: "ABOVE" | "BELOW";
+  enabled: boolean;
+  breached?: boolean;
+  breachedAt?: string;
+  breachedPrice?: number;
+  note?: string;
 }
 
 export interface StockData {
@@ -22,6 +38,28 @@ export interface StockData {
   screener_headline: string;
   alerts: StockAlert[];
   ai_verdict?: string;
+  ai_action?: "BUY" | "SELL" | "HOLD";
+  ai_confidence?: number;
+  ai_reasoning?: string;
+  ai_technical_signal?: string;
+  ai_fundamental_signal?: string;
+  ai_key_catalyst?: string;
+  history_5d?: PricePoint[];
+  rsi?: number;
+  roce_pct?: number;
+  pb?: number;
+  opm_pct?: number;
+  market_cap_cr?: number;
+  interest_coverage?: number;
+  dividend_yield?: number;
+  eps?: number;
+  inventory_days?: number;
+  atr?: number;
+  atr_pct?: number;
+  price_range_5d_pct?: number;
+  volatility_level?: "HIGH" | "MEDIUM" | "LOW";
+  volatility_label?: string;
+  alert_threshold?: PriceThresholdAlert;
 }
 
 export interface ScanResult {
@@ -61,6 +99,7 @@ export interface ScannerConfig {
       debt_to_equity_max: number;
     };
   };
+  price_thresholds?: Record<string, PriceThresholdAlert>;
   notifications?: {
     telegram?: {
       enabled: boolean;
@@ -114,4 +153,81 @@ export interface TestAlertResult {
   simulated: boolean;
   telegram: EndpointDiagnostic;
   whatsapp: EndpointDiagnostic;
+}
+
+export type NewsCategory =
+  | "EARNINGS"
+  | "GOLD_POLICY"
+  | "RETAIL_DEMAND"
+  | "EXPORTS"
+  | "EXPANSION"
+  | "REGULATORY"
+  | "SECTOR";
+
+export type NewsSentiment = "BULLISH" | "BEARISH" | "NEUTRAL";
+
+export interface JewelleryNewsItem {
+  id: string;
+  headline: string;
+  summary: string;
+  source: string;
+  url?: string;
+  publishedAt: string;
+  timeAgo: string;
+  category: NewsCategory;
+  sentiment: NewsSentiment;
+  relatedSymbols: string[];
+  impactRating?: "HIGH" | "MEDIUM" | "LOW";
+}
+
+export interface JewelleryNewsResponse {
+  status: "ok" | "error";
+  total: number;
+  lastUpdated: string;
+  news: JewelleryNewsItem[];
+  message?: string;
+}
+
+export interface SectorSentimentData {
+  headline: string;
+  sentiment_stance: "Bullish" | "Cautiously Bullish" | "Neutral / Consolidating" | "Cautious / Bearish";
+  sentiment_score: number;
+  paragraph: string;
+  key_driver: string;
+  generated_at: string;
+  model_used: string;
+  visible_stocks_count: number;
+  advancing_count: number;
+  declining_count: number;
+  avg_change_pct: number;
+  source?: "gemini" | "fallback";
+}
+
+export interface SectorDailyPerformancePoint {
+  date: string;
+  displayDate: string;
+  fullDate: string;
+  indexLevel: number;
+  dailyChangePct: number;
+  cumulativeReturnPct: number;
+  advancingCount: number;
+  decliningCount: number;
+  volumeCr: number;
+  topGainerSymbol?: string;
+  topGainerPct?: number;
+}
+
+export interface Sector30DHistoryResponse {
+  status: "ok" | "error";
+  days: SectorDailyPerformancePoint[];
+  startLevel: number;
+  currentLevel: number;
+  periodReturnPct: number;
+  highestLevel: number;
+  lowestLevel: number;
+  bestDay: { date: string; changePct: number };
+  worstDay: { date: string; changePct: number };
+  totalVolumeCr: number;
+  avgDailyVolumeCr: number;
+  source?: "yahoo" | "calculated";
 }

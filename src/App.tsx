@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { StockData, ScannerConfig, ScanResult } from "./types";
+import { StockData, ScannerConfig, ScanResult, SectorSentimentData } from "./types";
+import { calculateRSI } from "./utils/rsi";
 import { AndroidFrame } from "./components/AndroidFrame";
 import { StockCard } from "./components/StockCard";
 import { AlertsView } from "./components/AlertsView";
@@ -12,6 +13,11 @@ import { ConfigEditor } from "./components/ConfigEditor";
 import { PythonFilesViewer } from "./components/PythonFilesViewer";
 import { PWAInstallButton } from "./components/PWAInstallButton";
 import { OfflineIndicator } from "./components/OfflineIndicator";
+import { NotificationBanner, ActiveNotification } from "./components/NotificationBanner";
+import { JewellerySectorSummary } from "./components/JewellerySectorSummary";
+import { JewelleryNewsTicker } from "./components/JewelleryNewsTicker";
+import { SectorSentimentCard } from "./components/SectorSentimentCard";
+import { SectorDailyPerformanceChart } from "./components/SectorDailyPerformanceChart";
 import {
   Sparkles,
   RefreshCw,
@@ -22,16 +28,25 @@ import {
   Search,
   Filter,
   Layers,
-  ChevronRight
+  ChevronRight,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  AlertTriangle,
+  BellRing,
+  Zap
 } from "lucide-react";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("stocks");
-  const [activeFilter, setActiveFilter] = useState<"ALL" | "BREAKOUT" | "RESULTS" | "VALUE">("ALL");
+  const [activeFilter, setActiveFilter] = useState<
+    "ALL" | "BREAKOUT" | "RESULTS" | "VALUE" | "BUY" | "HOLD" | "SELL" | "RSI_OVERBOUGHT" | "RSI_OVERSOLD" | "TARGET_BREACHED" | "VOLUME_SPIKE"
+  >("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [activeNotifications, setActiveNotifications] = useState<ActiveNotification[]>([]);
   const [config, setConfig] = useState<ScannerConfig>({
     scan_time: "09:00",
     timezone: "Asia/Kolkata",
@@ -119,12 +134,43 @@ export default function App() {
       if (res.ok) {
         const data: ScanResult = await res.json();
         setScanResult(data);
+
+        // Detect any price target breaches from scan result
+        data.stocks.forEach(stock => {
+          if (stock.alert_threshold?.enabled && stock.alert_threshold.breached) {
+            handleTriggerNotification(
+              `${stock.symbol} Target Hit!`,
+              `Market price ₹${stock.price} breached your target level of ₹${stock.alert_threshold.targetPrice}!`,
+              stock
+            );
+          }
+        });
       }
     } catch (err) {
       console.error("Scan error:", err);
     } finally {
       setIsScanning(false);
     }
+  };
+
+  const handleTriggerNotification = (title: string, message: string, stock?: StockData) => {
+    const id = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const newNotif: ActiveNotification = {
+      id,
+      title,
+      message,
+      stock,
+      timestamp: new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    };
+    setActiveNotifications(prev => [newNotif, ...prev.slice(0, 2)]);
+
+    setTimeout(() => {
+      setActiveNotifications(prev => prev.filter(n => n.id !== id));
+    }, 8500);
+  };
+
+  const handleDismissNotification = (id: string) => {
+    setActiveNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   const handleSaveConfig = async (newConfig: ScannerConfig) => {
@@ -146,7 +192,68 @@ export default function App() {
     }
   };
 
+  const [sectorSentiment, setSectorSentiment] = useState<SectorSentimentData | null>(null);
+  const [isAnalyzingSentiment, setIsAnalyzingSentiment] = useState(false);
+  const [showSentimentCard, setShowSentimentCard] = useState(true);
+  const [showDailyPerformanceChart, setShowDailyPerformanceChart] = useState(true);
+
+  const triggerSectorSentiment = async (targetStocks?: StockData[]) => {
+    setIsAnalyzingSentiment(true);
+    setShowSentimentCard(true);
+    try {
+      const visibleBasket =
+        targetStocks && targetStocks.length > 0
+          ? targetStocks
+          : filteredStocks.length > 0
+          ? filteredStocks
+          : stocks;
+
+      const res = await fetch("/api/stock-sentiment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stocks: visibleBasket })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === "ok" && data.sentiment) {
+          setSectorSentiment(data.sentiment);
+          handleTriggerNotification(
+            "Gemini Sentiment Analyzed",
+            `${data.sentiment.sentiment_stance} stance across ${data.sentiment.visible_stocks_count} jewellery stocks (${data.sentiment.advancing_count} Up, ${data.sentiment.declining_count} Down)`
+          );
+        }
+      } else {
+        console.error("Failed to fetch sector sentiment", await res.text());
+      }
+    } catch (err) {
+      console.error("Sector sentiment error:", err);
+    } finally {
+      setIsAnalyzingSentiment(false);
+    }
+  };
+
   const stocks = scanResult?.stocks || [];
+
+  const handleUpdateStock = (updatedStock: StockData) => {
+    setScanResult(prev => {
+      if (!prev) return prev;
+      const newStocks = prev.stocks.map(s => (s.symbol === updatedStock.symbol ? updatedStock : s));
+      return {
+        ...prev,
+        stocks: newStocks,
+        alertedStocks: newStocks.filter(s => s.alerts && s.alerts.length > 0)
+      };
+    });
+  };
+
+  const getStockAction = (stock: StockData): "BUY" | "SELL" | "HOLD" => {
+    if (stock.ai_action) return stock.ai_action;
+    const v = (stock.ai_verdict || "").toLowerCase();
+    if (v.startsWith("buy")) return "BUY";
+    if (v.startsWith("sell")) return "SELL";
+    return "HOLD";
+  };
 
   // Filter stocks by active filter and search
   const filteredStocks = stocks.filter(stock => {
@@ -157,12 +264,47 @@ export default function App() {
     if (!matchesSearch) return false;
 
     if (activeFilter === "ALL") return true;
+    if (activeFilter === "BUY" || activeFilter === "HOLD" || activeFilter === "SELL") {
+      return getStockAction(stock) === activeFilter;
+    }
+    if (activeFilter === "RSI_OVERBOUGHT") {
+      return calculateRSI(stock).isOverbought;
+    }
+    if (activeFilter === "RSI_OVERSOLD") {
+      return calculateRSI(stock).isOversold;
+    }
+    if (activeFilter === "TARGET_BREACHED") {
+      return Boolean(stock.alert_threshold?.breached);
+    }
+    if (activeFilter === "VOLUME_SPIKE") {
+      const volMultiple =
+        typeof stock.vol_multiple === "number" && stock.vol_multiple > 0
+          ? stock.vol_multiple
+          : stock.avg_vol_20d > 0
+          ? stock.volume / stock.avg_vol_20d
+          : 1.0;
+      return volMultiple >= 2.0;
+    }
     return stock.alerts.some(a => a.type === activeFilter);
   });
 
+  const targetBreachedCount = stocks.filter(s => s.alert_threshold?.breached).length;
+  const volumeSpikeCount = stocks.filter(s => {
+    const vm = typeof s.vol_multiple === "number" && s.vol_multiple > 0
+      ? s.vol_multiple
+      : s.avg_vol_20d > 0
+      ? s.volume / s.avg_vol_20d
+      : 1.0;
+    return vm >= 2.0;
+  }).length;
   const breakoutCount = stocks.filter(s => s.alerts.some(a => a.type === "BREAKOUT")).length;
   const resultsCount = stocks.filter(s => s.alerts.some(a => a.type === "RESULTS")).length;
   const valueCount = stocks.filter(s => s.alerts.some(a => a.type === "VALUE")).length;
+  const buyCount = stocks.filter(s => getStockAction(s) === "BUY").length;
+  const holdCount = stocks.filter(s => getStockAction(s) === "HOLD").length;
+  const sellCount = stocks.filter(s => getStockAction(s) === "SELL").length;
+  const overboughtCount = stocks.filter(s => calculateRSI(s).isOverbought).length;
+  const oversoldCount = stocks.filter(s => calculateRSI(s).isOversold).length;
 
   return (
     <AndroidFrame
@@ -170,6 +312,14 @@ export default function App() {
       onTabChange={setActiveTab}
       alertCount={scanResult?.totalAlerts || 0}
     >
+      <NotificationBanner
+        notifications={activeNotifications}
+        onDismiss={handleDismissNotification}
+        onSelectStock={(stock) => {
+          setActiveTab("stocks");
+          setSearchQuery(stock.symbol);
+        }}
+      />
       <OfflineIndicator />
 
       {/* Main Top Header */}
@@ -214,7 +364,20 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              id="btn-stock-sentiment"
+              data-testid="btn-stock-sentiment"
+              type="button"
+              onClick={() => triggerSectorSentiment(filteredStocks)}
+              disabled={isAnalyzingSentiment}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 text-amber-300 font-bold text-xs border border-amber-500/40 shadow-sm active:scale-95 transition disabled:opacity-60 cursor-pointer"
+              title="Aggregate all visible stocks for Gemini Stock Sentiment Analysis"
+            >
+              <Sparkles className={`w-3.5 h-3.5 text-amber-400 ${isAnalyzingSentiment ? "animate-spin" : ""}`} />
+              <span>{isAnalyzingSentiment ? "Analyzing..." : "Stock Sentiment Analysis"}</span>
+            </button>
+
             <button
               id="btn-scan-now"
               onClick={runScan}
@@ -225,6 +388,16 @@ export default function App() {
               <span>{isScanning ? "Scanning NSE..." : "Scan Now"}</span>
             </button>
           </div>
+        </div>
+
+        {/* Horizontal Auto-Scrolling Jewellery Sector Financial News Ticker */}
+        <div className="mt-3">
+          <JewelleryNewsTicker
+            onSelectStock={(symbol) => {
+              setActiveTab("stocks");
+              setSearchQuery(symbol);
+            }}
+          />
         </div>
       </div>
 
@@ -243,6 +416,36 @@ export default function App() {
             >
               <Layers className="w-3.5 h-3.5" />
               <span>All Stocks ({stocks.length})</span>
+            </button>
+
+            {/* Target Breached Filter Pill (highlighted when any breach exists) */}
+            <button
+              onClick={() => setActiveFilter("TARGET_BREACHED")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition flex items-center gap-1.5 ${
+                activeFilter === "TARGET_BREACHED"
+                  ? "bg-rose-500 text-white shadow font-bold"
+                  : targetBreachedCount > 0
+                  ? "bg-rose-950/70 text-rose-300 hover:bg-rose-900/80 border border-rose-500/60 animate-pulse"
+                  : "bg-slate-900 text-rose-400/80 hover:bg-slate-800 border border-rose-500/20"
+              }`}
+            >
+              <BellRing className="w-3.5 h-3.5 text-rose-400" />
+              <span>Target Breached ({targetBreachedCount})</span>
+            </button>
+
+            {/* Volume Spikes (>2x 20D Avg) Filter Pill */}
+            <button
+              onClick={() => setActiveFilter("VOLUME_SPIKE")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition flex items-center gap-1.5 ${
+                activeFilter === "VOLUME_SPIKE"
+                  ? "bg-rose-500 text-white shadow font-bold"
+                  : volumeSpikeCount > 0
+                  ? "bg-rose-950/70 text-rose-300 hover:bg-rose-900/80 border border-rose-500/60"
+                  : "bg-slate-900 text-rose-400/80 hover:bg-slate-800 border border-rose-500/20"
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 text-rose-400" />
+              <span>Volume Spikes &gt;2x ({volumeSpikeCount})</span>
             </button>
 
             <button
@@ -280,6 +483,68 @@ export default function App() {
               <Gem className="w-3.5 h-3.5" />
               <span>Value Picks ({valueCount})</span>
             </button>
+
+            {/* AI Verdict Filter Pills */}
+            <button
+              onClick={() => setActiveFilter("BUY")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition flex items-center gap-1.5 ${
+                activeFilter === "BUY"
+                  ? "bg-emerald-500 text-slate-950 shadow font-bold"
+                  : "bg-slate-900 text-emerald-300 hover:bg-slate-800 border border-emerald-500/40"
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>AI Buy ({buyCount})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveFilter("HOLD")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition flex items-center gap-1.5 ${
+                activeFilter === "HOLD"
+                  ? "bg-amber-500 text-slate-950 shadow font-bold"
+                  : "bg-slate-900 text-amber-300 hover:bg-slate-800 border border-amber-500/40"
+              }`}
+            >
+              <Minus className="w-3.5 h-3.5" />
+              <span>AI Hold ({holdCount})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveFilter("SELL")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition flex items-center gap-1.5 ${
+                activeFilter === "SELL"
+                  ? "bg-rose-500 text-white shadow font-bold"
+                  : "bg-slate-900 text-rose-300 hover:bg-slate-800 border border-rose-500/40"
+              }`}
+            >
+              <TrendingDown className="w-3.5 h-3.5" />
+              <span>AI Sell ({sellCount})</span>
+            </button>
+
+            {/* RSI Indicator Filters */}
+            <button
+              onClick={() => setActiveFilter("RSI_OVERBOUGHT")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition flex items-center gap-1.5 ${
+                activeFilter === "RSI_OVERBOUGHT"
+                  ? "bg-rose-500 text-white shadow font-bold"
+                  : "bg-slate-900 text-rose-400 hover:bg-slate-800 border border-rose-500/30"
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>RSI Overbought ({overboughtCount})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveFilter("RSI_OVERSOLD")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition flex items-center gap-1.5 ${
+                activeFilter === "RSI_OVERSOLD"
+                  ? "bg-emerald-500 text-slate-950 shadow font-bold"
+                  : "bg-slate-900 text-emerald-400 hover:bg-slate-800 border border-emerald-500/30"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>RSI Oversold ({oversoldCount})</span>
+            </button>
           </div>
 
           {/* Search bar */}
@@ -294,6 +559,35 @@ export default function App() {
             />
           </div>
 
+          {/* Sector Movement Summary Row: Total percentage movement of all jewellery stocks combined */}
+          <JewellerySectorSummary
+            stocks={stocks}
+            filteredCount={filteredStocks.length}
+            onTriggerSentiment={() => triggerSectorSentiment(filteredStocks)}
+            isAnalyzingSentiment={isAnalyzingSentiment}
+            onToggleDailyChart={() => setShowDailyPerformanceChart(prev => !prev)}
+            showDailyChart={showDailyPerformanceChart}
+          />
+
+          {/* Aggregated Sector Movement: 30-Day Daily Performance Area Chart (powered by Recharts) */}
+          {showDailyPerformanceChart && (
+            <SectorDailyPerformanceChart
+              stocks={stocks}
+              filteredStocks={filteredStocks}
+            />
+          )}
+
+          {/* Sector Sentiment Card: Displays the aggregated Gemini market sentiment paragraph */}
+          {showSentimentCard && (sectorSentiment || isAnalyzingSentiment) && (
+            <SectorSentimentCard
+              sentiment={sectorSentiment}
+              isLoading={isAnalyzingSentiment}
+              visibleCount={filteredStocks.length > 0 ? filteredStocks.length : stocks.length}
+              onRefresh={() => triggerSectorSentiment(filteredStocks)}
+              onDismiss={() => setShowSentimentCard(false)}
+            />
+          )}
+
           {/* Stocks List */}
           <div className="space-y-3">
             {filteredStocks.length === 0 ? (
@@ -302,7 +596,13 @@ export default function App() {
               </div>
             ) : (
               filteredStocks.map((stock, idx) => (
-                <StockCard key={stock.symbol} stock={stock} index={idx} />
+                <StockCard
+                  key={stock.symbol}
+                  stock={stock}
+                  index={idx}
+                  onUpdateStock={handleUpdateStock}
+                  onTriggerNotification={handleTriggerNotification}
+                />
               ))
             )}
           </div>
