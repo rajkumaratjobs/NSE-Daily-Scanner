@@ -26,6 +26,7 @@ import {
   Minimize2
 } from "lucide-react";
 import { StockData, SectorDailyPerformancePoint, Sector30DHistoryResponse } from "../types";
+import { useTheme } from "../utils/themeContext";
 
 interface SectorDailyPerformanceChartProps {
   stocks: StockData[];
@@ -40,6 +41,7 @@ export const SectorDailyPerformanceChart: React.FC<SectorDailyPerformanceChartPr
   filteredStocks,
   className = ""
 }) => {
+  const { isBright } = useTheme();
   const [data, setData] = useState<Sector30DHistoryResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [metricMode, setMetricMode] = useState<MetricMode>("cumulative");
@@ -408,15 +410,15 @@ export const SectorDailyPerformanceChart: React.FC<SectorDailyPerformanceChartPr
 
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="rgba(148, 163, 184, 0.08)"
+                    stroke={isBright ? "rgba(100, 116, 139, 0.18)" : "rgba(148, 163, 184, 0.08)"}
                     vertical={false}
                   />
 
                   <XAxis
                     dataKey="displayDate"
                     tickLine={false}
-                    axisLine={{ stroke: "rgba(148, 163, 184, 0.2)" }}
-                    tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "monospace" }}
+                    axisLine={{ stroke: isBright ? "rgba(148, 163, 184, 0.4)" : "rgba(148, 163, 184, 0.2)" }}
+                    tick={{ fill: isBright ? "#475569" : "#94a3b8", fontSize: 10, fontFamily: "monospace" }}
                     interval="preserveStartEnd"
                     minTickGap={25}
                   />
@@ -425,7 +427,7 @@ export const SectorDailyPerformanceChart: React.FC<SectorDailyPerformanceChartPr
                     domain={yDomain}
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "monospace" }}
+                    tick={{ fill: isBright ? "#475569" : "#94a3b8", fontSize: 10, fontFamily: "monospace" }}
                     tickFormatter={yAxisTickFormatter}
                     width={45}
                   />
@@ -433,7 +435,7 @@ export const SectorDailyPerformanceChart: React.FC<SectorDailyPerformanceChartPr
                   {/* Neutral baseline reference line */}
                   <ReferenceLine
                     y={refLineY}
-                    stroke="rgba(148, 163, 184, 0.25)"
+                    stroke={isBright ? "rgba(100, 116, 139, 0.4)" : "rgba(148, 163, 184, 0.25)"}
                     strokeDasharray="4 4"
                   />
 
@@ -449,7 +451,7 @@ export const SectorDailyPerformanceChart: React.FC<SectorDailyPerformanceChartPr
                     activeDot={{
                       r: 5,
                       fill: strokeColor,
-                      stroke: "#0f172a",
+                      stroke: isBright ? "#ffffff" : "#0f172a",
                       strokeWidth: 2
                     }}
                     isAnimationActive={true}

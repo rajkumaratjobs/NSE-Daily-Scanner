@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Battery, Wifi, Signal, Smartphone, Maximize2 } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface AndroidFrameProps {
   children: React.ReactNode;
@@ -46,6 +47,7 @@ export const AndroidFrame: React.FC<AndroidFrameProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle variant="pill" />
           <span className="hidden sm:inline-block text-[11px] font-mono text-slate-400">High Density Workstation</span>
           <button
             onClick={() => setIsPhoneMode(!isPhoneMode)}

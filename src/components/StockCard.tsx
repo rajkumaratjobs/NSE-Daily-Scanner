@@ -27,7 +27,8 @@ import {
   BellPlus,
   BellRing,
   Flame,
-  Zap
+  Zap,
+  Star
 } from "lucide-react";
 
 interface StockCardProps {
@@ -35,9 +36,18 @@ interface StockCardProps {
   index: number;
   onUpdateStock?: (updatedStock: StockData) => void;
   onTriggerNotification?: (title: string, message: string, stock: StockData) => void;
+  isWatchlist?: boolean;
+  onToggleWatchlist?: (symbol: string) => void;
 }
 
-export const StockCard: React.FC<StockCardProps> = ({ stock, index, onUpdateStock, onTriggerNotification }) => {
+export const StockCard: React.FC<StockCardProps> = ({
+  stock,
+  index,
+  onUpdateStock,
+  onTriggerNotification,
+  isWatchlist = false,
+  onToggleWatchlist
+}) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -201,6 +211,29 @@ export const StockCard: React.FC<StockCardProps> = ({ stock, index, onUpdateStoc
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-amber-400 font-medium border border-slate-700 shrink-0">
               {stock.symbol}
             </span>
+
+            {/* Watchlist Toggle Pill Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onToggleWatchlist) {
+                  onToggleWatchlist(stock.symbol);
+                } else if (onUpdateStock) {
+                  onUpdateStock({ ...stock, is_watchlist: !isWatchlist });
+                }
+              }}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold border transition-all cursor-pointer select-none active:scale-95 ${
+                isWatchlist
+                  ? "bg-amber-500/20 text-amber-300 border-amber-400/70 shadow-xs"
+                  : "bg-slate-800/80 text-slate-400 hover:text-amber-300 hover:bg-slate-800 border-slate-700"
+              }`}
+              title={isWatchlist ? "Currently in Watchlist (Click to remove)" : "Add stock to Watchlist"}
+              aria-label={isWatchlist ? `Remove ${stock.symbol} from Watchlist` : `Add ${stock.symbol} to Watchlist`}
+            >
+              <Star className={`w-3 h-3 ${isWatchlist ? "fill-amber-400 text-amber-400" : "text-slate-400"}`} />
+              <span>{isWatchlist ? "Watchlist" : "+ Watch"}</span>
+            </button>
 
             {/* Prominent Color-Coded AI Verdict Pill next to Stock Symbol */}
             <div

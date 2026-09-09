@@ -52,3 +52,285 @@
   animation: scaleUp 0.15s ease-out forwards;
 }
 
+/* ==========================================================================
+   Day / Bright Mode Theming System
+   ========================================================================== */
+
+html.theme-bright,
+body.theme-bright {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+  color-scheme: light !important;
+}
+
+/* Transitions for smooth theme switching */
+body,
+#root,
+.transition-colors {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Canvas & Container Backgrounds in Bright Mode */
+.theme-bright .bg-\[\#0B0E14\],
+.theme-bright .bg-\[\#0B0E14\]\/40,
+.theme-bright .bg-\[\#0B0E14\]\/60,
+.theme-bright .bg-\[\#0B0E14\]\/80,
+.theme-bright .bg-\[\#0B0E14\]\/90 {
+  background-color: #F8FAFC !important;
+}
+
+.theme-bright .bg-\[\#0F1219\],
+.theme-bright .bg-\[\#0F1219\]\/95,
+.theme-bright .bg-\[\#0F1219\]\/90,
+.theme-bright .bg-\[\#0F1219\]\/80 {
+  background-color: #FFFFFF !important;
+}
+
+.theme-bright .bg-\[\#0F1420\] {
+  background-color: #F8FAFC !important;
+}
+
+.theme-bright .bg-slate-950,
+.theme-bright .bg-slate-950\/95,
+.theme-bright .bg-slate-950\/90,
+.theme-bright .bg-slate-950\/80,
+.theme-bright .bg-slate-950\/60,
+.theme-bright .bg-slate-950\/50,
+.theme-bright .bg-slate-950\/40,
+.theme-bright .bg-slate-950\/30 {
+  background-color: #F8FAFC !important;
+}
+
+.theme-bright .bg-slate-900,
+.theme-bright .bg-slate-900\/95,
+.theme-bright .bg-slate-900\/90,
+.theme-bright .bg-slate-900\/80,
+.theme-bright .bg-slate-900\/70,
+.theme-bright .bg-slate-900\/60,
+.theme-bright .bg-slate-900\/50,
+.theme-bright .bg-slate-900\/40,
+.theme-bright .bg-slate-900\/30 {
+  background-color: #FFFFFF !important;
+}
+
+.theme-bright .bg-slate-800 {
+  background-color: #F1F5F9 !important;
+}
+
+.theme-bright .bg-slate-800\/90,
+.theme-bright .bg-slate-800\/80,
+.theme-bright .bg-slate-800\/70,
+.theme-bright .bg-slate-800\/60,
+.theme-bright .bg-slate-800\/50 {
+  background-color: #F1F5F9 !important;
+}
+
+.theme-bright .bg-slate-800\/40,
+.theme-bright .bg-slate-800\/30,
+.theme-bright .bg-slate-800\/20 {
+  background-color: #F8FAFC !important;
+}
+
+/* Gradients in Bright Mode */
+.theme-bright .from-slate-900 {
+  --tw-gradient-from: #FFFFFF !important;
+}
+.theme-bright .via-slate-900,
+.theme-bright .via-slate-900\/95,
+.theme-bright .via-slate-900\/90 {
+  --tw-gradient-via: #F8FAFC !important;
+}
+.theme-bright .to-slate-900,
+.theme-bright .to-slate-950 {
+  --tw-gradient-to: #FFFFFF !important;
+}
+.theme-bright .from-slate-950 {
+  --tw-gradient-from: #F8FAFC !important;
+}
+
+/* Borders in Bright Mode */
+.theme-bright .border-slate-800,
+.theme-bright .border-slate-800\/90,
+.theme-bright .border-slate-800\/80,
+.theme-bright .border-slate-800\/60,
+.theme-bright .border-slate-800\/50,
+.theme-bright .border-slate-800\/40,
+.theme-bright .border-slate-800\/30 {
+  border-color: #E2E8F0 !important;
+}
+
+.theme-bright .border-slate-700,
+.theme-bright .border-slate-700\/80,
+.theme-bright .border-slate-700\/60,
+.theme-bright .border-slate-700\/50 {
+  border-color: #CBD5E1 !important;
+}
+
+/* Text Hierarchy in Bright Mode */
+.theme-bright .text-white,
+.theme-bright .text-slate-100 {
+  color: #0F172A !important;
+}
+
+.theme-bright .text-slate-200 {
+  color: #1E293B !important;
+}
+
+.theme-bright .text-slate-300 {
+  color: #334155 !important;
+}
+
+.theme-bright .text-slate-400 {
+  color: #475569 !important;
+}
+
+.theme-bright .text-slate-500 {
+  color: #64748B !important;
+}
+
+.theme-bright .text-slate-600 {
+  color: #94A3B8 !important;
+}
+
+.theme-bright .text-slate-700 {
+  color: #CBD5E1 !important;
+}
+
+/* Button & Interactive states in Bright Mode */
+.theme-bright .hover\:bg-slate-800:hover,
+.theme-bright .hover\:bg-slate-800\/80:hover,
+.theme-bright .hover\:bg-slate-700:hover {
+  background-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+.theme-bright .hover\:border-slate-700:hover,
+.theme-bright .hover\:border-slate-600:hover {
+  border-color: #94A3B8 !important;
+}
+
+/* Forms & Inputs in Bright Mode */
+.theme-bright input,
+.theme-bright select,
+.theme-bright textarea {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+}
+
+.theme-bright input::placeholder,
+.theme-bright textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+.theme-bright input:focus,
+.theme-bright select:focus,
+.theme-bright textarea:focus {
+  border-color: #D97706 !important; /* amber-600 */
+}
+
+/* Shadows in Bright Mode */
+.theme-bright .shadow-2xl,
+.theme-bright .shadow-xl,
+.theme-bright .shadow-lg,
+.theme-bright .shadow-md,
+.theme-bright .shadow-sm {
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04) !important;
+}
+
+.theme-bright .shadow-black\/90,
+.theme-bright .shadow-black\/70,
+.theme-bright .shadow-black\/40,
+.theme-bright .shadow-black\/20 {
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.09) !important;
+}
+
+/* Contrast Enhancements for Status Chips & Accents */
+.theme-bright .text-amber-400,
+.theme-bright .text-amber-300 {
+  color: #B45309 !important; /* amber-700 for crisp text contrast */
+}
+
+.theme-bright .bg-amber-500\/10,
+.theme-bright .bg-amber-500\/15,
+.theme-bright .bg-amber-500\/20 {
+  background-color: #FEF3C7 !important; /* amber-100 */
+  border-color: #FCD34D !important;
+}
+
+.theme-bright .text-emerald-400,
+.theme-bright .text-emerald-300 {
+  color: #047857 !important; /* emerald-700 */
+}
+
+.theme-bright .bg-emerald-500\/10,
+.theme-bright .bg-emerald-500\/15,
+.theme-bright .bg-emerald-500\/20 {
+  background-color: #D1FAE5 !important; /* emerald-100 */
+  border-color: #6EE7B7 !important;
+}
+
+.theme-bright .text-rose-400,
+.theme-bright .text-rose-300 {
+  color: #BE123C !important; /* rose-700 */
+}
+
+.theme-bright .bg-rose-500\/10,
+.theme-bright .bg-rose-500\/15,
+.theme-bright .bg-rose-500\/20,
+.theme-bright .bg-rose-950\/40,
+.theme-bright .bg-rose-950\/80 {
+  background-color: #FFE4E6 !important; /* rose-100 */
+  border-color: #FDA4AF !important;
+}
+
+.theme-bright .text-rose-200 {
+  color: #9F1239 !important;
+}
+
+/* Recharts Tooltip & Backdrop in Bright Mode */
+.theme-bright .recharts-default-tooltip {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  color: #0F172A !important;
+}
+
+.theme-bright .recharts-cartesian-grid-horizontal line,
+.theme-bright .recharts-cartesian-grid-vertical line {
+  stroke: #E2E8F0 !important;
+}
+
+/* Android frame phone border in bright mode */
+.theme-bright .border-\[8px\].border-slate-800 {
+  border-color: #CBD5E1 !important;
+}
+
+/* Bottom navigation bar in Bright Mode */
+.theme-bright #android-bottom-nav {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-color: #E2E8F0 !important;
+}
+
+/* Quick Snapshot Section in Bright Mode */
+.theme-bright #quick-snapshot-section {
+  background: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.theme-bright #snapshot-active-alerts-card,
+.theme-bright #snapshot-sector-gain-loss-card,
+.theme-bright #snapshot-watchlist-card {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+}
+
+.theme-bright #snapshot-active-alerts-card:hover,
+.theme-bright #snapshot-sector-gain-loss-card:hover,
+.theme-bright #snapshot-watchlist-card:hover {
+  background-color: #F1F5F9 !important;
+}
+
+

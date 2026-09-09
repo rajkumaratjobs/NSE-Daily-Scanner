@@ -19,6 +19,8 @@ import { JewellerySectorSummary } from "./components/JewellerySectorSummary";
 import { JewelleryNewsTicker } from "./components/JewelleryNewsTicker";
 import { SectorSentimentCard } from "./components/SectorSentimentCard";
 import { SectorDailyPerformanceChart } from "./components/SectorDailyPerformanceChart";
+import { ThemeToggle } from "./components/ThemeToggle";
+import { QuickSnapshot } from "./components/QuickSnapshot";
 import {
   Sparkles,
   RefreshCw,
@@ -35,14 +37,38 @@ import {
   Minus,
   AlertTriangle,
   BellRing,
-  Zap
+  Zap,
+  Star
 } from "lucide-react";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("stocks");
   const [activeFilter, setActiveFilter] = useState<
-    "ALL" | "BREAKOUT" | "RESULTS" | "VALUE" | "BUY" | "HOLD" | "SELL" | "RSI_OVERBOUGHT" | "RSI_OVERSOLD" | "TARGET_BREACHED" | "VOLUME_SPIKE"
+    "ALL" | "BREAKOUT" | "RESULTS" | "VALUE" | "BUY" | "HOLD" | "SELL" | "RSI_OVERBOUGHT" | "RSI_OVERSOLD" | "TARGET_BREACHED" | "VOLUME_SPIKE" | "WATCHLIST"
   >("ALL");
+  const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("nse_jewellery_watchlist");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return ["TITAN.NS", "KALYANKJIL.NS", "SENCO.NS"];
+  });
+
+  const handleToggleWatchlist = (symbol: string) => {
+    setWatchlistSymbols(prev => {
+      const next = prev.includes(symbol)
+        ? prev.filter(s => s !== symbol)
+        : [...prev, symbol];
+      try {
+        localStorage.setItem("nse_jewellery_watchlist", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
@@ -300,6 +326,9 @@ export default function App() {
     if (activeFilter === "TARGET_BREACHED") {
       return Boolean(stock.alert_threshold?.breached);
     }
+    if (activeFilter === "WATCHLIST") {
+      return watchlistSymbols.includes(stock.symbol) || Boolean(stock.is_watchlist);
+    }
     if (activeFilter === "VOLUME_SPIKE") {
       const volMultiple =
         typeof stock.vol_multiple === "number" && stock.vol_multiple > 0
@@ -312,6 +341,8 @@ export default function App() {
     return stock.alerts.some(a => a.type === activeFilter);
   });
 
+  const watchlistCount = stocks.filter(s => watchlistSymbols.includes(s.symbol) || Boolean(s.is_watchlist)).length;
+  const activeAlertsCount = stocks.filter(s => (s.alerts && s.alerts.length > 0) || s.alert_threshold?.breached).length;
   const targetBreachedCount = stocks.filter(s => s.alert_threshold?.breached).length;
   const volumeSpikeCount = stocks.filter(s => {
     const vm = typeof s.vol_multiple === "number" && s.vol_multiple > 0
@@ -368,7 +399,10 @@ export default function App() {
             </div>
           </div>
 
-          <PWAInstallButton className="hidden sm:inline-flex" />
+          <div className="flex items-center gap-2">
+            <ThemeToggle variant="pill" />
+            <PWAInstallButton className="hidden sm:inline-flex" />
+          </div>
         </div>
 
         {/* Scan Status & Trigger Action Bar */}
@@ -428,6 +462,17 @@ export default function App() {
       {/* VIEW 1: STOCKS VIEW */}
       {activeTab === "stocks" && (
         <div className="space-y-4">
+          {/* Quick Snapshot summary section at the top of the stocks list */}
+          <QuickSnapshot
+            stocks={stocks}
+            activeAlertsCount={activeAlertsCount}
+            watchlistCount={watchlistCount}
+            activeFilter={activeFilter}
+            onSelectFilter={(filter) => setActiveFilter(filter)}
+            onViewAlertsTab={() => setActiveTab("alerts")}
+            onToggleSectorChart={() => setShowDailyPerformanceChart((prev) => !prev)}
+          />
+
           {/* Filter Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
             <button
@@ -440,6 +485,23 @@ export default function App() {
             >
               <Layers className="w-3.5 h-3.5" />
               <span>All Stocks ({stocks.length})</span>
+            </button>
+
+            {/* Watchlist Filter Pill */}
+            <button
+              id="filter-pill-watchlist"
+              onClick={() => setActiveFilter(activeFilter === "WATCHLIST" ? "ALL" : "WATCHLIST")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition flex items-center gap-1.5 ${
+                activeFilter === "WATCHLIST"
+                  ? "bg-amber-400 text-slate-950 font-bold shadow"
+                  : watchlistCount > 0
+                  ? "bg-slate-900 text-amber-300 hover:bg-slate-800 border border-amber-500/40"
+                  : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
+              }`}
+              title="Filter to stocks currently marked in Watchlist status"
+            >
+              <Star className={`w-3.5 h-3.5 ${watchlistCount > 0 ? "fill-amber-400 text-amber-400" : ""}`} />
+              <span>Watchlist ({watchlistCount})</span>
             </button>
 
             {/* Target Breached Filter Pill (highlighted when any breach exists) */}
@@ -626,6 +688,8 @@ export default function App() {
                     key={stock.symbol}
                     stock={stock}
                     index={idx}
+                    isWatchlist={watchlistSymbols.includes(stock.symbol) || Boolean(stock.is_watchlist)}
+                    onToggleWatchlist={handleToggleWatchlist}
                     onUpdateStock={handleUpdateStock}
                     onTriggerNotification={handleTriggerNotification}
                   />

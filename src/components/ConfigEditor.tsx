@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ScannerConfig } from "../types";
-import { Clock, Sliders, CheckCircle2, Shield, BellRing, Sparkles, RefreshCw, Send, MessageCircle, Flame } from "lucide-react";
+import { Clock, Sliders, CheckCircle2, Shield, BellRing, Sparkles, RefreshCw, Send, MessageCircle, Flame, Sun, Moon } from "lucide-react";
+import { useTheme } from "../utils/themeContext";
 
 interface ConfigEditorProps {
   config: ScannerConfig;
@@ -9,6 +10,7 @@ interface ConfigEditorProps {
 }
 
 export const ConfigEditor: React.FC<ConfigEditorProps> = ({ config, onSave, isSaving }) => {
+  const { isBright, setTheme } = useTheme();
   const [formData, setFormData] = useState<ScannerConfig>(JSON.parse(JSON.stringify(config)));
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -98,6 +100,77 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({ config, onSave, isSa
               Format: minute hour day month weekday
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Appearance & Display Mode Card */}
+      <div className="rounded-lg bg-[#0F1219] border border-slate-800 p-3.5">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Sun className="w-3.5 h-3.5 text-amber-400" />
+            <h4 className="font-semibold text-white text-xs uppercase tracking-wider font-mono">
+              Appearance & Display Mode
+            </h4>
+          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+            {isBright ? "Bright (Day) Active" : "Night Mode Active"}
+          </span>
+        </div>
+
+        <p className="text-[11px] text-slate-400 mb-3 leading-relaxed font-sans">
+          Toggle between low-glare Night Mode for trading workstations and high-contrast Bright Mode for daytime market analysis.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={() => setTheme("night")}
+            className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1.5 cursor-pointer ${
+              !isBright
+                ? "bg-slate-900 border-amber-500/70 ring-1 ring-amber-500/40 shadow-md"
+                : "bg-slate-800/40 border-slate-700/60 hover:border-slate-600 opacity-80 hover:opacity-100"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-slate-800 text-amber-400">
+                  <Moon className="w-4 h-4" />
+                </div>
+                <span className="font-semibold text-xs text-white">Night Mode (Dark)</span>
+              </div>
+              {!isBright && (
+                <CheckCircle2 className="w-4 h-4 text-amber-400" />
+              )}
+            </div>
+            <p className="text-[10px] text-slate-400 leading-normal">
+              Deep dark palette with high-contrast slate surfaces and amber trading highlights.
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTheme("bright")}
+            className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1.5 cursor-pointer ${
+              isBright
+                ? "bg-amber-500/10 border-amber-500 ring-1 ring-amber-500/40 shadow-md"
+                : "bg-slate-800/40 border-slate-700/60 hover:border-slate-600 opacity-80 hover:opacity-100"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-amber-500/20 text-amber-500">
+                  <Sun className="w-4 h-4" />
+                </div>
+                <span className="font-semibold text-xs text-white">Bright Mode (Day)</span>
+              </div>
+              {isBright && (
+                <CheckCircle2 className="w-4 h-4 text-amber-500" />
+              )}
+            </div>
+            <p className="text-[10px] text-slate-400 leading-normal">
+              Clean, crisp off-white canvas with dark slate text optimized for daylight readability.
+            </p>
+          </button>
         </div>
       </div>
 

@@ -60,6 +60,7 @@ export interface StockData {
   volatility_level?: "HIGH" | "MEDIUM" | "LOW";
   volatility_label?: string;
   alert_threshold?: PriceThresholdAlert;
+  is_watchlist?: boolean;
 }
 
 export interface ScanResult {

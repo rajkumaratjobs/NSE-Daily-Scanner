@@ -1,6 +1,6 @@
 {
   "name": "Daily NSE Jewellery Scanner",
-  "description": "Automated daily 9:00 AM IST scanner for NSE jewellery stocks with Breakout, Earnings results, Value filters, Sector Sentiment Analysis, Telegram & WhatsApp alerts, and Gemini AI verdicts.",
+  "description": "Automated daily 9:00 AM IST scanner for NSE jewellery stocks with Breakout, Earnings results, Value filters, Sector Sentiment Analysis, Night and Bright Day display modes, Telegram & WhatsApp alerts, and Gemini AI verdicts.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
