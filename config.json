@@ -59,6 +59,10 @@
       "pe_max": 15,
       "roe_min_pct": 15,
       "debt_to_equity_max": 0.5
+    },
+    "volatility": {
+      "enabled": true,
+      "high_risk_threshold_pct": 3.5
     }
   },
   "notifications": {

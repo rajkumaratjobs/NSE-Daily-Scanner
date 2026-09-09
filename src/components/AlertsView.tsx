@@ -20,9 +20,12 @@ import {
   Terminal,
   Bug,
   Radio,
-  Wrench
+  Wrench,
+  Flame,
+  Sliders,
+  ShieldAlert
 } from "lucide-react";
-import { ScannerConfig, TestAlertResult } from "../types";
+import { ScannerConfig, TestAlertResult, StockData } from "../types";
 
 interface AlertsViewProps {
   formattedMessage: string;
@@ -31,6 +34,7 @@ interface AlertsViewProps {
   config?: ScannerConfig;
   onSaveConfig?: (newConfig: ScannerConfig) => Promise<void>;
   onRefreshStatus?: () => Promise<void>;
+  stocks?: StockData[];
 }
 
 export const AlertsView: React.FC<AlertsViewProps> = ({
@@ -39,7 +43,8 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
   hasWhatsApp: initialHasWhatsApp,
   config,
   onSaveConfig,
-  onRefreshStatus
+  onRefreshStatus,
+  stocks = []
 }) => {
   const [copied, setCopied] = useState<"none" | "whatsapp" | "telegram" | "all">("none");
   const [isDispatching, setIsDispatching] = useState<string | null>(null);
@@ -48,6 +53,16 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
   const [testAlertResult, setTestAlertResult] = useState<TestAlertResult | null>(null);
   const [showDiagnosticPanel, setShowDiagnosticPanel] = useState<boolean>(false);
   const [showRawPayloads, setShowRawPayloads] = useState<boolean>(false);
+
+  // Volatility Notification Threshold Configuration State
+  const [volatilityAlertEnabled, setVolatilityAlertEnabled] = useState<boolean>(
+    config?.alert_types?.volatility?.enabled ?? true
+  );
+  const [volatilityThresholdPct, setVolatilityThresholdPct] = useState<number>(
+    config?.alert_types?.volatility?.high_risk_threshold_pct ?? 3.5
+  );
+  const [isSavingVolatility, setIsSavingVolatility] = useState<boolean>(false);
+  const [volatilitySaveFeedback, setVolatilitySaveFeedback] = useState<string | null>(null);
 
   // Local configuration form state
   const [tgBotToken, setTgBotToken] = useState(config?.notifications?.telegram?.bot_token || "");
@@ -75,7 +90,48 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
       if (config.notifications.whatsapp.callmebot_key) setCallmebotKey(config.notifications.whatsapp.callmebot_key);
       if (config.notifications.whatsapp.callmebot_phone) setCallmebotPhone(config.notifications.whatsapp.callmebot_phone);
     }
+    if (config?.alert_types?.volatility) {
+      if (typeof config.alert_types.volatility.enabled === "boolean") {
+        setVolatilityAlertEnabled(config.alert_types.volatility.enabled);
+      }
+      if (typeof config.alert_types.volatility.high_risk_threshold_pct === "number") {
+        setVolatilityThresholdPct(config.alert_types.volatility.high_risk_threshold_pct);
+      }
+    }
   }, [config]);
+
+  // Handler to toggle or update custom volatility threshold
+  const handleSaveVolatilityConfig = async (overrideEnabled?: boolean, overrideThreshold?: number) => {
+    if (!config || !onSaveConfig) return;
+    const targetEnabled = overrideEnabled !== undefined ? overrideEnabled : volatilityAlertEnabled;
+    const targetThreshold = overrideThreshold !== undefined ? overrideThreshold : volatilityThresholdPct;
+
+    const updatedConfig: ScannerConfig = {
+      ...config,
+      alert_types: {
+        ...config.alert_types,
+        volatility: {
+          enabled: targetEnabled,
+          high_risk_threshold_pct: targetThreshold
+        }
+      }
+    };
+
+    setIsSavingVolatility(true);
+    try {
+      await onSaveConfig(updatedConfig);
+      if (onRefreshStatus) await onRefreshStatus();
+      setVolatilitySaveFeedback(
+        `Volatility alert saved: ${targetEnabled ? "ACTIVE" : "DISABLED"} at ${targetThreshold.toFixed(1)}% threshold`
+      );
+      setTimeout(() => setVolatilitySaveFeedback(null), 3500);
+    } catch (err: any) {
+      setVolatilitySaveFeedback(`Failed to save: ${err.message}`);
+      setTimeout(() => setVolatilitySaveFeedback(null), 4000);
+    } finally {
+      setIsSavingVolatility(false);
+    }
+  };
 
   // Notification result feedback
   const [dispatchResult, setDispatchResult] = useState<{
@@ -875,6 +931,262 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* High-Risk Volatility Alert Configuration Toggle & Custom Threshold */}
+      <div id="volatility-threshold-config-card" className="rounded-lg bg-[#0F1219] border border-slate-800 p-3.5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-800">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30">
+              <Flame className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                  High-Risk Volatility Notification Threshold
+                </h4>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-mono font-semibold">
+                  ATR % Trigger
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-sans">
+                Set a custom ATR % threshold to trigger high-risk stock alerts during daily morning scans and instant dispatches
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Toggle Button */}
+            <button
+              id="btn-toggle-volatility-alert"
+              type="button"
+              onClick={() => {
+                const nextState = !volatilityAlertEnabled;
+                setVolatilityAlertEnabled(nextState);
+                handleSaveVolatilityConfig(nextState, volatilityThresholdPct);
+              }}
+              className={`px-2.5 py-1 rounded text-xs font-mono font-bold transition flex items-center gap-1.5 ${
+                volatilityAlertEnabled
+                  ? "bg-rose-600 hover:bg-rose-500 text-white shadow-sm"
+                  : "bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700"
+              }`}
+            >
+              {volatilityAlertEnabled ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-white" />
+                  <span>ACTIVE</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="w-3.5 h-3.5 text-slate-500" />
+                  <span>DISABLED</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Feedback alert if recently saved */}
+        {volatilitySaveFeedback && (
+          <div className="p-2 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <span>{volatilitySaveFeedback}</span>
+          </div>
+        )}
+
+        {/* Controls Grid */}
+        <div className={`space-y-3 transition-opacity ${volatilityAlertEnabled ? "opacity-100" : "opacity-50 pointer-events-none"}`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+            {/* Slider and direct input */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-slate-400">Custom Volatility Threshold:</span>
+                <span className="text-sm font-bold text-rose-400 font-mono">
+                  {volatilityThresholdPct.toFixed(1)}% ATR
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  id="volatility-threshold-slider"
+                  type="range"
+                  min="1.0"
+                  max="8.0"
+                  step="0.1"
+                  value={volatilityThresholdPct}
+                  onChange={e => setVolatilityThresholdPct(parseFloat(e.target.value))}
+                  onMouseUp={() => handleSaveVolatilityConfig(volatilityAlertEnabled, volatilityThresholdPct)}
+                  onTouchEnd={() => handleSaveVolatilityConfig(volatilityAlertEnabled, volatilityThresholdPct)}
+                  className="flex-1 accent-rose-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg appearance-none"
+                />
+                <div className="flex items-center gap-1 bg-[#0B0E14] border border-slate-700 rounded px-2 py-1 w-20">
+                  <input
+                    id="volatility-threshold-number-input"
+                    type="number"
+                    step="0.1"
+                    min="1.0"
+                    max="10.0"
+                    value={volatilityThresholdPct}
+                    onChange={e => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        setVolatilityThresholdPct(val);
+                      }
+                    }}
+                    className="w-full bg-transparent text-xs text-white font-mono focus:outline-none text-right"
+                  />
+                  <span className="text-[10px] text-slate-500 font-mono">%</span>
+                </div>
+              </div>
+              <div className="flex justify-between text-[9px] font-mono text-slate-500 px-0.5">
+                <span>1.0% (Quiet)</span>
+                <span>3.5% (Standard)</span>
+                <span>8.0% (Extreme)</span>
+              </div>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                Quick Sensitivity Presets
+              </label>
+              <div className="grid grid-cols-3 gap-1.5 font-mono text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVolatilityThresholdPct(2.5);
+                    handleSaveVolatilityConfig(volatilityAlertEnabled, 2.5);
+                  }}
+                  className={`p-1.5 rounded border text-center transition ${
+                    Math.abs(volatilityThresholdPct - 2.5) < 0.05
+                      ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
+                      : "bg-[#0B0E14] text-slate-400 border-slate-800 hover:text-slate-200"
+                  }`}
+                >
+                  <div className="text-[10px] font-bold">2.5%</div>
+                  <div className="text-[8px] text-slate-500">Sensitive</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVolatilityThresholdPct(3.5);
+                    handleSaveVolatilityConfig(volatilityAlertEnabled, 3.5);
+                  }}
+                  className={`p-1.5 rounded border text-center transition ${
+                    Math.abs(volatilityThresholdPct - 3.5) < 0.05
+                      ? "bg-rose-500/20 text-rose-300 border-rose-500/50"
+                      : "bg-[#0B0E14] text-slate-400 border-slate-800 hover:text-slate-200"
+                  }`}
+                >
+                  <div className="text-[10px] font-bold">3.5%</div>
+                  <div className="text-[8px] text-slate-500">Standard (NSE)</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVolatilityThresholdPct(4.5);
+                    handleSaveVolatilityConfig(volatilityAlertEnabled, 4.5);
+                  }}
+                  className={`p-1.5 rounded border text-center transition ${
+                    Math.abs(volatilityThresholdPct - 4.5) < 0.05
+                      ? "bg-red-500/20 text-red-300 border-red-500/50"
+                      : "bg-[#0B0E14] text-slate-400 border-slate-800 hover:text-slate-200"
+                  }`}
+                >
+                  <div className="text-[10px] font-bold">4.5%</div>
+                  <div className="text-[8px] text-slate-500">High Risk</div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Real-time Sector Breach Impact Analysis */}
+          {stocks && stocks.length > 0 && (
+            <div className="p-2.5 rounded bg-[#0B0E14] border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-slate-400 flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Sector Breach Impact ({stocks.length} jewellery stocks tracked):</span>
+                </span>
+                <span
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    stocks.filter(s => {
+                      const atrPct = typeof s.atr_pct === "number" && s.atr_pct > 0
+                        ? s.atr_pct
+                        : (typeof s.atr === "number" && s.price > 0 ? (s.atr / s.price) * 100 : 0);
+                      return atrPct >= volatilityThresholdPct;
+                    }).length > 0
+                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
+                      : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                  }`}
+                >
+                  {
+                    stocks.filter(s => {
+                      const atrPct = typeof s.atr_pct === "number" && s.atr_pct > 0
+                        ? s.atr_pct
+                        : (typeof s.atr === "number" && s.price > 0 ? (s.atr / s.price) * 100 : 0);
+                      return atrPct >= volatilityThresholdPct;
+                    }).length
+                  }{" "}
+                  of {stocks.length} Trigger High-Risk Alert
+                </span>
+              </div>
+
+              {/* Grid of tracked jewellery stocks */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px] font-mono">
+                {stocks.map(stock => {
+                  const atrPct = typeof stock.atr_pct === "number" && stock.atr_pct > 0
+                    ? stock.atr_pct
+                    : (typeof stock.atr === "number" && stock.price > 0 ? (stock.atr / stock.price) * 100 : 0);
+                  const isBreached = atrPct >= volatilityThresholdPct;
+                  return (
+                    <div
+                      key={stock.symbol}
+                      className={`p-1.5 rounded border flex items-center justify-between ${
+                        isBreached
+                          ? "bg-rose-950/30 border-rose-800/60 text-rose-200"
+                          : "bg-slate-900/40 border-slate-800/60 text-slate-400"
+                      }`}
+                    >
+                      <div className="truncate">
+                        <div className="font-semibold truncate text-white">{stock.name.split(" ")[0]}</div>
+                        <div className="text-[9px] text-slate-500">{stock.symbol.replace(".NS", "")}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className={`font-bold ${isBreached ? "text-rose-400" : "text-slate-400"}`}>
+                          {atrPct.toFixed(1)}%
+                        </div>
+                        <div className="text-[8px]">
+                          {isBreached ? "⚠️ ALERT" : "OK"}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Action button to save explicitly */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <span className="text-[10px] text-slate-500 font-mono">
+              Updates config.json and applies immediately to future automated scans and test alerts.
+            </span>
+            <button
+              id="btn-save-volatility-threshold"
+              type="button"
+              onClick={() => handleSaveVolatilityConfig(volatilityAlertEnabled, volatilityThresholdPct)}
+              disabled={isSavingVolatility}
+              className="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs font-mono font-bold transition flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {isSavingVolatility ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-3.5 h-3.5" />
+              )}
+              <span>Save Volatility Config</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Message Terminal Output Preview */}
       <div className="rounded-lg bg-[#0B0E14] border border-slate-800 p-3.5 relative overflow-hidden">

@@ -98,6 +98,10 @@ export interface ScannerConfig {
       roe_min_pct: number;
       debt_to_equity_max: number;
     };
+    volatility?: {
+      enabled: boolean;
+      high_risk_threshold_pct: number;
+    };
   };
   price_thresholds?: Record<string, PriceThresholdAlert>;
   notifications?: {
@@ -201,6 +205,9 @@ export interface SectorSentimentData {
   declining_count: number;
   avg_change_pct: number;
   source?: "gemini" | "fallback";
+  previous_score?: number;
+  score_change?: number;
+  sentiment_trend?: "improving" | "declining" | "steady" | "unchanged";
 }
 
 export interface SectorDailyPerformancePoint {

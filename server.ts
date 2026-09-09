@@ -517,6 +517,24 @@ function evaluateFilters(stock: StockData, alertCfg: any, userThreshold?: any) {
     }
   }
 
+  // Filter 4 - VOLATILITY: High-Risk Stock ATR Volatility Threshold
+  if (alertCfg.volatility?.enabled) {
+    const thresholdPct = typeof alertCfg.volatility.high_risk_threshold_pct === "number" && alertCfg.volatility.high_risk_threshold_pct > 0
+      ? alertCfg.volatility.high_risk_threshold_pct
+      : 3.5;
+    const atrPct = typeof stock.atr_pct === "number" && stock.atr_pct > 0
+      ? stock.atr_pct
+      : (typeof stock.atr === "number" && stock.price > 0 ? (stock.atr / stock.price) * 100 : 0);
+
+    if (atrPct >= thresholdPct || (stock.volatility_level === "HIGH" && thresholdPct <= 3.5)) {
+      alerts.push({
+        type: "VOLATILITY",
+        badge: "⚡ HIGH RISK (Vol)",
+        description: `High Volatility ATR ${atrPct.toFixed(1)}% exceeded custom ${thresholdPct.toFixed(1)}% risk threshold (ATR ₹${stock.atr ? stock.atr.toFixed(2) : (stock.price * atrPct / 100).toFixed(2)})`
+      });
+    }
+  }
+
   return alerts;
 }
 
@@ -544,6 +562,9 @@ interface SectorSentimentData {
   declining_count: number;
   avg_change_pct: number;
   source?: "gemini" | "fallback";
+  previous_score?: number;
+  score_change?: number;
+  sentiment_trend?: "improving" | "declining" | "steady" | "unchanged";
 }
 
 interface SectorDailyPerformancePoint {
@@ -1502,6 +1523,8 @@ app.delete("/api/stocks/:symbol/threshold", (req, res) => {
 });
 
 // API: Stock & Sector Sentiment Analysis powered by Gemini AI
+let cachedPreviousSectorSentiment: any = null;
+
 const handleSentimentAnalysis = async (req: express.Request, res: express.Response) => {
   try {
     let clientStocks: any[] = req.body?.stocks;
@@ -1627,12 +1650,12 @@ Return STRICTLY a JSON object with this exact structure:
   "paragraph": "The short, human-readable paragraph on current market sentiment."
 }`;
 
-      const candidateModels = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"];
+      const candidateModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
       for (const candidateModel of candidateModels) {
         if (sentimentResult) break;
         try {
-          const callWithTimeout = (promise: Promise<any>, ms = 6000) => {
+          const callWithTimeout = (promise: Promise<any>, ms = 3500) => {
             return Promise.race([
               promise,
               new Promise((_, reject) =>
@@ -1649,7 +1672,7 @@ Return STRICTLY a JSON object with this exact structure:
                 responseMimeType: "application/json"
               }
             }),
-            6000
+            3500
           );
 
           if (res?.text) {
@@ -1764,6 +1787,25 @@ Return STRICTLY a JSON object with this exact structure:
       };
     }
 
+    const clientPreviousScore =
+      typeof req.body?.previous_score === "number" ? req.body.previous_score : undefined;
+    const prevScore =
+      clientPreviousScore !== undefined
+        ? clientPreviousScore
+        : cachedPreviousSectorSentiment
+        ? cachedPreviousSectorSentiment.sentiment_score
+        : 64;
+
+    const scoreDelta = sentimentResult.sentiment_score - prevScore;
+    const trend: "improving" | "declining" | "steady" =
+      scoreDelta > 0 ? "improving" : scoreDelta < 0 ? "declining" : "steady";
+
+    sentimentResult.previous_score = prevScore;
+    sentimentResult.score_change = scoreDelta;
+    sentimentResult.sentiment_trend = trend;
+
+    cachedPreviousSectorSentiment = { ...sentimentResult };
+
     res.json({
       status: "ok",
       sentiment: sentimentResult
@@ -1789,6 +1831,26 @@ Return STRICTLY a JSON object with this exact structure:
       avg_change_pct: 0.8,
       source: "fallback"
     };
+
+    const clientPreviousScore =
+      typeof req.body?.previous_score === "number" ? req.body.previous_score : undefined;
+    const prevScore =
+      clientPreviousScore !== undefined
+        ? clientPreviousScore
+        : cachedPreviousSectorSentiment
+        ? cachedPreviousSectorSentiment.sentiment_score
+        : 64;
+
+    const scoreDelta = safeFallback.sentiment_score - prevScore;
+    const trend: "improving" | "declining" | "steady" =
+      scoreDelta > 0 ? "improving" : scoreDelta < 0 ? "declining" : "steady";
+
+    safeFallback.previous_score = prevScore;
+    safeFallback.score_change = scoreDelta;
+    safeFallback.sentiment_trend = trend;
+
+    cachedPreviousSectorSentiment = { ...safeFallback };
+
     res.json({
       status: "ok",
       sentiment: safeFallback

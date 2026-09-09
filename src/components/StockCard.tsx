@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "motion/react";
 import { StockData } from "../types";
 import { StockSparkline } from "./StockSparkline";
 import { calculateRSI } from "../utils/rsi";
@@ -141,8 +142,17 @@ export const StockCard: React.FC<StockCardProps> = ({ stock, index, onUpdateStoc
   };
 
   return (
-    <div
+    <motion.div
       id={`stock-card-${stock.symbol.replace(/[^a-zA-Z0-9]/g, "-")}`}
+      initial={{ opacity: 0, x: -16, y: 8 }}
+      animate={{ opacity: 1, x: 0, y: 0 }}
+      exit={{ opacity: 0, x: 12, transition: { duration: 0.15 } }}
+      transition={{
+        duration: 0.28,
+        delay: Math.min(index * 0.035, 0.24),
+        ease: [0.22, 1, 0.36, 1]
+      }}
+      layout="position"
       onClick={() => setIsExpanded((prev) => !prev)}
       role="button"
       tabIndex={0}
@@ -153,7 +163,7 @@ export const StockCard: React.FC<StockCardProps> = ({ stock, index, onUpdateStoc
           setIsExpanded((prev) => !prev);
         }
       }}
-      className={`rounded-2xl p-3.5 transition-all border cursor-pointer select-none focus:outline-none focus:ring-1 focus:ring-amber-500/50 ${
+      className={`rounded-2xl p-3.5 transition-colors border cursor-pointer select-none focus:outline-none focus:ring-1 focus:ring-amber-500/50 ${
         isExpanded
           ? "bg-[#0F1420] border-amber-500/60 ring-1 ring-amber-500/40 shadow-xl shadow-black/70"
           : hasAlerts
@@ -854,6 +864,6 @@ export const StockCard: React.FC<StockCardProps> = ({ stock, index, onUpdateStoc
         onUpdateStock={onUpdateStock}
         onTriggerNotification={onTriggerNotification}
       />
-    </div>
+    </motion.div>
   );
 };

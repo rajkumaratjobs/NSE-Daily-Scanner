@@ -12,11 +12,15 @@ import {
   ChevronDown,
   ChevronUp,
   X,
-  Bot
+  Bot,
+  ArrowUp,
+  ArrowDown,
+  ArrowRight
 } from "lucide-react";
 
 interface SectorSentimentCardProps {
   sentiment: SectorSentimentData | null;
+  previousSentiment?: SectorSentimentData | null;
   isLoading: boolean;
   visibleCount: number;
   onRefresh: () => void;
@@ -25,6 +29,7 @@ interface SectorSentimentCardProps {
 
 export const SectorSentimentCard: React.FC<SectorSentimentCardProps> = ({
   sentiment,
+  previousSentiment,
   isLoading,
   visibleCount,
   onRefresh,
@@ -92,6 +97,37 @@ export const SectorSentimentCard: React.FC<SectorSentimentCardProps> = ({
     ? "border-rose-500/30 shadow-rose-950/20"
     : "border-amber-500/30 shadow-amber-950/20";
 
+  // Comparison against previous scan
+  const previousScore =
+    typeof sentiment.previous_score === "number"
+      ? sentiment.previous_score
+      : previousSentiment
+      ? previousSentiment.sentiment_score
+      : null;
+
+  const scoreDelta =
+    typeof sentiment.score_change === "number"
+      ? sentiment.score_change
+      : previousScore !== null
+      ? sentiment.sentiment_score - previousScore
+      : null;
+
+  const sentimentTrend: "improving" | "declining" | "steady" =
+    sentiment.sentiment_trend === "improving"
+      ? "improving"
+      : sentiment.sentiment_trend === "declining"
+      ? "declining"
+      : sentiment.sentiment_trend === "steady"
+      ? "steady"
+      : scoreDelta !== null && scoreDelta > 0
+      ? "improving"
+      : scoreDelta !== null && scoreDelta < 0
+      ? "declining"
+      : "steady";
+
+  const isImproving = sentimentTrend === "improving";
+  const isDeclining = sentimentTrend === "declining";
+
   return (
     <div
       id="stock-sentiment-card"
@@ -124,6 +160,47 @@ export const SectorSentimentCard: React.FC<SectorSentimentCardProps> = ({
                 )}
                 <span>{sentiment.sentiment_stance}</span>
                 <span className="opacity-80">({sentiment.sentiment_score}/100)</span>
+              </span>
+
+              {/* Visual Indicator: Trend compared to previous scan */}
+              <span
+                id="sector-sentiment-scan-trend"
+                data-testid="sector-sentiment-scan-trend"
+                className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold border flex items-center gap-1.5 transition-all ${
+                  isImproving
+                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm shadow-emerald-950/20"
+                    : isDeclining
+                    ? "bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm shadow-rose-950/20"
+                    : "bg-slate-800 text-slate-300 border-slate-700"
+                }`}
+                title={`Sector sentiment is ${
+                  isImproving ? "improving" : isDeclining ? "declining" : "holding steady"
+                } compared to previous scan${
+                  previousScore !== null
+                    ? ` (Current: ${sentiment.sentiment_score} pts vs Previous: ${previousScore} pts)`
+                    : ""
+                }`}
+              >
+                {isImproving ? (
+                  <ArrowUp className="w-3 h-3 text-emerald-400 stroke-[2.5]" />
+                ) : isDeclining ? (
+                  <ArrowDown className="w-3 h-3 text-rose-400 stroke-[2.5]" />
+                ) : (
+                  <ArrowRight className="w-3 h-3 text-slate-400" />
+                )}
+                <span>
+                  {isImproving ? "Improving" : isDeclining ? "Declining" : "Steady"}
+                </span>
+                {scoreDelta !== null && scoreDelta !== 0 && (
+                  <span className="font-mono text-[9px] opacity-90">
+                    ({scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta} pts vs prev scan)
+                  </span>
+                )}
+                {scoreDelta === 0 && (
+                  <span className="font-mono text-[9px] opacity-75">
+                    (vs prev scan)
+                  </span>
+                )}
               </span>
 
               {/* Model Attribution Badge */}
@@ -239,6 +316,26 @@ export const SectorSentimentCard: React.FC<SectorSentimentCardProps> = ({
                 Breadth:{" "}
                 <strong className="text-emerald-400">{sentiment.advancing_count} Adv</strong> /{" "}
                 <strong className="text-rose-400">{sentiment.declining_count} Dec</strong>
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <span className="text-slate-400">Scan Trend:</span>
+                {isImproving ? (
+                  <strong className="text-emerald-400 font-bold flex items-center gap-0.5">
+                    <ArrowUp className="w-3 h-3 text-emerald-400 stroke-[2.5]" />
+                    <span>Improving {scoreDelta ? `(+${scoreDelta} pts)` : ""}</span>
+                  </strong>
+                ) : isDeclining ? (
+                  <strong className="text-rose-400 font-bold flex items-center gap-0.5">
+                    <ArrowDown className="w-3 h-3 text-rose-400 stroke-[2.5]" />
+                    <span>Declining {scoreDelta ? `(${scoreDelta} pts)` : ""}</span>
+                  </strong>
+                ) : (
+                  <strong className="text-slate-400 font-bold flex items-center gap-0.5">
+                    <ArrowRight className="w-3 h-3 text-slate-400" />
+                    <span>Steady</span>
+                  </strong>
+                )}
               </span>
             </div>
 

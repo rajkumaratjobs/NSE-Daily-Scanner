@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ScannerConfig } from "../types";
-import { Clock, Sliders, CheckCircle2, Shield, BellRing, Sparkles, RefreshCw, Send, MessageCircle } from "lucide-react";
+import { Clock, Sliders, CheckCircle2, Shield, BellRing, Sparkles, RefreshCw, Send, MessageCircle, Flame } from "lucide-react";
 
 interface ConfigEditorProps {
   config: ScannerConfig;
@@ -19,17 +19,20 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({ config, onSave, isSa
     }));
   };
 
-  const handleAlertToggle = (key: "breakout" | "results" | "value") => {
-    setFormData(prev => ({
-      ...prev,
-      alert_types: {
-        ...prev.alert_types,
-        [key]: {
-          ...prev.alert_types[key],
-          enabled: !prev.alert_types[key].enabled
+  const handleAlertToggle = (key: "breakout" | "results" | "value" | "volatility") => {
+    setFormData(prev => {
+      const currentVal = prev.alert_types[key] || { enabled: false, high_risk_threshold_pct: 3.5 };
+      return {
+        ...prev,
+        alert_types: {
+          ...prev.alert_types,
+          [key]: {
+            ...currentVal,
+            enabled: !currentVal.enabled
+          }
         }
-      }
-    }));
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -311,6 +314,60 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({ config, onSave, isSa
               className="w-full bg-[#0B0E14] border border-slate-700/80 rounded px-2 py-1.5 text-xs text-white font-mono"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Filter 4: Volatility Filter */}
+      <div className="rounded-lg bg-[#0F1219] border border-slate-800 p-3.5">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2">
+            <Flame className="w-3.5 h-3.5 text-rose-400" />
+            <h4 className="font-semibold text-white text-xs uppercase tracking-wider font-mono">Alert 4: High-Risk Volatility Filter</h4>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleAlertToggle("volatility")}
+            className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium transition ${
+              formData.alert_types.volatility?.enabled
+                ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
+                : "bg-slate-800 text-slate-400 border border-slate-700"
+            }`}
+          >
+            {formData.alert_types.volatility?.enabled ? "ACTIVE" : "DISABLED"}
+          </button>
+        </div>
+
+        <p className="text-[11px] text-slate-400 mb-2.5 font-sans">
+          Triggers high-risk stock alerts when a jewellery stock's 14-day Average True Range (ATR %) exceeds this custom volatility threshold.
+        </p>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[10px] text-slate-400 font-mono">Custom Volatility Threshold (ATR %)</label>
+            <span className="text-xs font-mono font-bold text-rose-400">
+              {(formData.alert_types.volatility?.high_risk_threshold_pct || 3.5).toFixed(1)}%
+            </span>
+          </div>
+          <input
+            type="number"
+            step="0.1"
+            min="1.0"
+            max="15.0"
+            value={formData.alert_types.volatility?.high_risk_threshold_pct ?? 3.5}
+            onChange={e =>
+              setFormData(prev => ({
+                ...prev,
+                alert_types: {
+                  ...prev.alert_types,
+                  volatility: {
+                    enabled: prev.alert_types.volatility?.enabled ?? true,
+                    high_risk_threshold_pct: parseFloat(e.target.value) || 3.5
+                  }
+                }
+              }))
+            }
+            className="w-full bg-[#0B0E14] border border-slate-700/80 rounded px-2.5 py-1.5 text-xs text-white font-mono"
+          />
         </div>
       </div>
 

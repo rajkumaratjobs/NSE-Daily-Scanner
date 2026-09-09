@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { AnimatePresence } from "motion/react";
 import { StockData, ScannerConfig, ScanResult, SectorSentimentData } from "./types";
 import { calculateRSI } from "./utils/rsi";
 import { AndroidFrame } from "./components/AndroidFrame";
@@ -90,7 +91,8 @@ export default function App() {
     async function initApp() {
       await refreshStatus();
       // Initial scan
-      runScan();
+      await runScan();
+      triggerSectorSentiment();
     }
 
     initApp();
@@ -145,6 +147,9 @@ export default function App() {
             );
           }
         });
+
+        // Refresh sector sentiment against previous scan
+        triggerSectorSentiment(data.stocks);
       }
     } catch (err) {
       console.error("Scan error:", err);
@@ -193,6 +198,14 @@ export default function App() {
   };
 
   const [sectorSentiment, setSectorSentiment] = useState<SectorSentimentData | null>(null);
+  const [previousSentiment, setPreviousSentiment] = useState<SectorSentimentData | null>(() => {
+    try {
+      const saved = localStorage.getItem("jewellery_previous_sector_sentiment");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [isAnalyzingSentiment, setIsAnalyzingSentiment] = useState(false);
   const [showSentimentCard, setShowSentimentCard] = useState(true);
   const [showDailyPerformanceChart, setShowDailyPerformanceChart] = useState(true);
@@ -208,15 +221,26 @@ export default function App() {
           ? filteredStocks
           : stocks;
 
+      const previousScore = sectorSentiment?.sentiment_score ?? previousSentiment?.sentiment_score;
+
       const res = await fetch("/api/stock-sentiment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stocks: visibleBasket })
+        body: JSON.stringify({
+          stocks: visibleBasket,
+          previous_score: previousScore
+        })
       });
 
       if (res.ok) {
         const data = await res.json();
         if (data.status === "ok" && data.sentiment) {
+          if (sectorSentiment) {
+            setPreviousSentiment(sectorSentiment);
+            try {
+              localStorage.setItem("jewellery_previous_sector_sentiment", JSON.stringify(sectorSentiment));
+            } catch {}
+          }
           setSectorSentiment(data.sentiment);
           handleTriggerNotification(
             "Gemini Sentiment Analyzed",
@@ -581,6 +605,7 @@ export default function App() {
           {showSentimentCard && (sectorSentiment || isAnalyzingSentiment) && (
             <SectorSentimentCard
               sentiment={sectorSentiment}
+              previousSentiment={previousSentiment}
               isLoading={isAnalyzingSentiment}
               visibleCount={filteredStocks.length > 0 ? filteredStocks.length : stocks.length}
               onRefresh={() => triggerSectorSentiment(filteredStocks)}
@@ -595,15 +620,17 @@ export default function App() {
                 No stocks match the selected filter.
               </div>
             ) : (
-              filteredStocks.map((stock, idx) => (
-                <StockCard
-                  key={stock.symbol}
-                  stock={stock}
-                  index={idx}
-                  onUpdateStock={handleUpdateStock}
-                  onTriggerNotification={handleTriggerNotification}
-                />
-              ))
+              <AnimatePresence mode="popLayout">
+                {filteredStocks.map((stock, idx) => (
+                  <StockCard
+                    key={stock.symbol}
+                    stock={stock}
+                    index={idx}
+                    onUpdateStock={handleUpdateStock}
+                    onTriggerNotification={handleTriggerNotification}
+                  />
+                ))}
+              </AnimatePresence>
             )}
           </div>
         </div>
@@ -618,6 +645,7 @@ export default function App() {
           config={config}
           onSaveConfig={handleSaveConfig}
           onRefreshStatus={refreshStatus}
+          stocks={stocks}
         />
       )}
 
