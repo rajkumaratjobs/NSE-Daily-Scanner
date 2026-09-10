@@ -21,6 +21,7 @@ import { SectorSentimentCard } from "./components/SectorSentimentCard";
 import { SectorDailyPerformanceChart } from "./components/SectorDailyPerformanceChart";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { QuickSnapshot } from "./components/QuickSnapshot";
+import { SurgeDashboard } from "./components/SurgeDashboard";
 import {
   Sparkles,
   RefreshCw,
@@ -42,7 +43,7 @@ import {
 } from "lucide-react";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>("stocks");
+  const [activeTab, setActiveTab] = useState<string>("btst");
   const [activeFilter, setActiveFilter] = useState<
     "ALL" | "BREAKOUT" | "RESULTS" | "VALUE" | "BUY" | "HOLD" | "SELL" | "RSI_OVERBOUGHT" | "RSI_OVERSOLD" | "TARGET_BREACHED" | "VOLUME_SPIKE" | "WATCHLIST"
   >("ALL");
@@ -377,87 +378,96 @@ export default function App() {
       />
       <OfflineIndicator />
 
-      {/* Main Top Header */}
-      <div className="pt-2 pb-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 p-2 shadow-lg shadow-amber-500/20 flex items-center justify-center text-slate-950">
-              <Gem className="w-6 h-6 stroke-[2.2]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="font-bold text-white text-base md:text-lg tracking-tight">
-                  Daily NSE Jewellery Scanner
-                </h1>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-                  NSE
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">
-                Automated 9:00 AM IST • Breakouts, Results & Value
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ThemeToggle variant="pill" />
-            <PWAInstallButton className="hidden sm:inline-flex" />
-          </div>
+      {/* VIEW 0: BTST SURGE DETECTOR (Early Pre-Surge & Institutional Accumulation Radar) */}
+      {activeTab === "btst" && (
+        <div className="pt-2">
+          <SurgeDashboard />
         </div>
+      )}
 
-        {/* Scan Status & Trigger Action Bar */}
-        <div className="mt-4 p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-slate-800/80 text-amber-400">
-              <Clock className="w-4 h-4" />
-            </div>
-            <div className="text-xs">
-              <div className="text-slate-300 font-medium flex items-center gap-1.5">
-                <span>Daily Schedule:</span>
-                <span className="font-mono font-bold text-amber-400">{config.scan_time || "09:00"} IST</span>
+      {/* Main Top Header for Daily Jewellery Scanner */}
+      {activeTab === "stocks" && (
+        <div className="pt-2 pb-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 p-2 shadow-lg shadow-amber-500/20 flex items-center justify-center text-slate-950">
+                <Gem className="w-6 h-6 stroke-[2.2]" />
               </div>
-              <div className="text-slate-400 text-[11px]">
-                Next scan in <span className="text-slate-200 font-mono font-medium">{nextScanCountdown || "calculating..."}</span>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h1 className="font-bold text-white text-base md:text-lg tracking-tight">
+                    Daily NSE Jewellery Scanner
+                  </h1>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                    NSE
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Automated 9:00 AM IST • Breakouts, Results & Value
+                </p>
               </div>
             </div>
+
+            <div className="flex items-center gap-2">
+              <ThemeToggle variant="pill" />
+              <PWAInstallButton className="hidden sm:inline-flex" />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              id="btn-stock-sentiment"
-              data-testid="btn-stock-sentiment"
-              type="button"
-              onClick={() => triggerSectorSentiment(filteredStocks)}
-              disabled={isAnalyzingSentiment}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 text-amber-300 font-bold text-xs border border-amber-500/40 shadow-sm active:scale-95 transition disabled:opacity-60 cursor-pointer"
-              title="Aggregate all visible stocks for Gemini Stock Sentiment Analysis"
-            >
-              <Sparkles className={`w-3.5 h-3.5 text-amber-400 ${isAnalyzingSentiment ? "animate-spin" : ""}`} />
-              <span>{isAnalyzingSentiment ? "Analyzing..." : "Stock Sentiment Analysis"}</span>
-            </button>
+          {/* Scan Status & Trigger Action Bar */}
+          <div className="mt-4 p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-slate-800/80 text-amber-400">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div className="text-xs">
+                <div className="text-slate-300 font-medium flex items-center gap-1.5">
+                  <span>Daily Schedule:</span>
+                  <span className="font-mono font-bold text-amber-400">{config.scan_time || "09:00"} IST</span>
+                </div>
+                <div className="text-slate-400 text-[11px]">
+                  Next scan in <span className="text-slate-200 font-mono font-medium">{nextScanCountdown || "calculating..."}</span>
+                </div>
+              </div>
+            </div>
 
-            <button
-              id="btn-scan-now"
-              onClick={runScan}
-              disabled={isScanning}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 active:scale-95 transition disabled:opacity-70"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? "animate-spin" : ""}`} />
-              <span>{isScanning ? "Scanning NSE..." : "Scan Now"}</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                id="btn-stock-sentiment"
+                data-testid="btn-stock-sentiment"
+                type="button"
+                onClick={() => triggerSectorSentiment(filteredStocks)}
+                disabled={isAnalyzingSentiment}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 text-amber-300 font-bold text-xs border border-amber-500/40 shadow-sm active:scale-95 transition disabled:opacity-60 cursor-pointer"
+                title="Aggregate all visible stocks for Gemini Stock Sentiment Analysis"
+              >
+                <Sparkles className={`w-3.5 h-3.5 text-amber-400 ${isAnalyzingSentiment ? "animate-spin" : ""}`} />
+                <span>{isAnalyzingSentiment ? "Analyzing..." : "Stock Sentiment Analysis"}</span>
+              </button>
+
+              <button
+                id="btn-scan-now"
+                onClick={runScan}
+                disabled={isScanning}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 active:scale-95 transition disabled:opacity-70"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? "animate-spin" : ""}`} />
+                <span>{isScanning ? "Scanning NSE..." : "Scan Now"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Horizontal Auto-Scrolling Jewellery Sector Financial News Ticker */}
+          <div className="mt-3">
+            <JewelleryNewsTicker
+              onSelectStock={(symbol) => {
+                setActiveTab("stocks");
+                setSearchQuery(symbol);
+              }}
+            />
           </div>
         </div>
-
-        {/* Horizontal Auto-Scrolling Jewellery Sector Financial News Ticker */}
-        <div className="mt-3">
-          <JewelleryNewsTicker
-            onSelectStock={(symbol) => {
-              setActiveTab("stocks");
-              setSearchQuery(symbol);
-            }}
-          />
-        </div>
-      </div>
+      )}
 
       {/* VIEW 1: STOCKS VIEW */}
       {activeTab === "stocks" && (

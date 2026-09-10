@@ -239,3 +239,136 @@ export interface Sector30DHistoryResponse {
   avgDailyVolumeCr: number;
   source?: "yahoo" | "calculated";
 }
+
+// BTST Surge Detector & Pre-Surge 4-Filter System Types
+export interface FilterMatchedStatus {
+  filter_a_news: boolean;
+  filter_a_detail: string;
+  filter_b_volume_delivery: boolean;
+  filter_b_detail: string;
+  filter_c_bulk_deals: boolean;
+  filter_c_detail: string;
+  filter_d_price_action: boolean;
+  filter_d_detail: string;
+  matched_count: number;
+}
+
+export interface MarketDepthBidAsk {
+  price: number;
+  orders: number;
+  quantity: number;
+}
+
+export interface MarketDepthData {
+  buy_pct: number;
+  sell_pct: number;
+  total_buy_qty: number;
+  total_sell_qty: number;
+  bids: MarketDepthBidAsk[];
+  asks: MarketDepthBidAsk[];
+}
+
+export interface BulkDealRecord {
+  id: string;
+  date: string;
+  time?: string;
+  client_name: string;
+  deal_type: "BUY" | "SELL";
+  quantity: number;
+  trade_price: number;
+  exchange: "NSE" | "BSE";
+  remarks?: string;
+}
+
+export interface StockNewsItem {
+  id: string;
+  title: string;
+  source: string;
+  time_ago: string;
+  dateStr: string;
+  category: "ANNOUNCEMENT" | "MEDIA" | "RESULTS" | "BULK_DEAL";
+  snippet: string;
+  keywords_matched?: string[];
+  sentiment: "BULLISH" | "BEARISH" | "NEUTRAL";
+}
+
+export interface PreSurgeStock {
+  id: string;
+  symbol: string;
+  name: string;
+  exchange: "NSE" | "BSE";
+  price: number;
+  change: number;
+  change_pct?: number;
+  changePct?: number;
+  day_low: number;
+  day_high: number;
+  low_52w: number;
+  high_52w: number;
+  pct_above_52w_low: number;
+  volume: number;
+  avg_vol_20d: number;
+  vol_multiple: number;
+  delivery_pct: number;
+  delivery_history_3d: number[];
+  market_depth: MarketDepthData;
+  reason_tag: string;
+  filters: FilterMatchedStatus;
+  category: "PRE_SURGE" | "BTST_CONFIRMED";
+  risk_level: "Low" | "Moderate" | "High" | "Speculative Turnaround";
+  bulk_buyer_summary: string;
+  bulk_deals: BulkDealRecord[];
+  news: StockNewsItem[];
+  technicals: {
+    pe: number;
+    rsi: number;
+    dma_200: number;
+    dma_50: number;
+    intraday_recovery_pct: number;
+    run_3d_pct: number;
+    pullback_pct: number;
+    support: number;
+    resistance: number;
+    debt_to_equity: number;
+  };
+  charts: {
+    "1D": Array<{ time: string; price: number; volume: number }>;
+    "1W": Array<{ time: string; price: number; volume: number }>;
+    "1M": Array<{ time: string; price: number; volume: number }>;
+    "3M": Array<{ time: string; price: number; volume: number }>;
+  };
+  events: Array<{
+    date: string;
+    title: string;
+    type: "AGM" | "RESULTS" | "DEBT_MILESTONE" | "DIVIDEND";
+    description: string;
+  }>;
+}
+
+export interface PortfolioHolding {
+  id: string;
+  symbol: string;
+  name: string;
+  quantity: number;
+  buyPrice: number;
+  buyDate: string; // ISO date e.g. 2025-07-12
+  targetExitPrice: number;
+  dividendReceivedPerShare: number;
+  currentPrice: number;
+}
+
+export interface ComparisonMetrics {
+  stockA: PreSurgeStock;
+  stockB: PreSurgeStock;
+  aiBrief?: {
+    leaderSymbol: string;
+    confidence: number;
+    stance: "Strong Outperformer" | "Moderate Outperformer" | "Equal / Mixed";
+    keyDifferentiator: string;
+    momentumAnalysis: string;
+    volumeAccumulationAnalysis: string;
+    riskRewardComparison: string;
+    tacticalRecommendation: string;
+  };
+}
+

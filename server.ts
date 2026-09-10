@@ -2834,6 +2834,71 @@ app.post("/api/alerts/send", async (req, res) => {
   }
 });
 
+// API: Side-by-Side Stock Comparison & AI Relative Strength Brief
+app.post("/api/compare-stocks", async (req, res) => {
+  try {
+    const { symbolA, symbolB, metricsA, metricsB } = req.body;
+
+    if (!symbolA || !symbolB) {
+      return res.status(400).json({ error: "symbolA and symbolB are required" });
+    }
+
+    if (ai) {
+      try {
+        const prompt = `You are an expert Indian stock market technical and momentum analyst specializing in BTST (Buy Today Sell Tomorrow) and 2-3 day pre-surge detection.
+Compare these two stocks:
+Stock A: ${symbolA}
+- Price: ₹${metricsA?.price}
+- Volume Multiple (vs 20D Avg): ${metricsA?.volMultiple}x
+- Delivery %: ${metricsA?.deliveryPct}%
+- RSI (14): ${metricsA?.rsi}
+- P/E Ratio: ${metricsA?.pe}
+- Catalyst: ${metricsA?.reason}
+
+Stock B: ${symbolB}
+- Price: ₹${metricsB?.price}
+- Volume Multiple (vs 20D Avg): ${metricsB?.volMultiple}x
+- Delivery %: ${metricsB?.deliveryPct}%
+- RSI (14): ${metricsB?.rsi}
+- P/E Ratio: ${metricsB?.pe}
+- Catalyst: ${metricsB?.reason}
+
+Provide a concise, highly objective 3-bullet comparison assessing:
+1. Relative Strength Winner for an immediate 20-40% pre-surge bounce.
+2. Volume & Delivery Accumulation footprint.
+3. Risk vs Reward verdict.
+Keep it strictly under 110 words with crisp bullet points.`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+        });
+
+        if (response.text) {
+          return res.json({ brief: response.text.trim(), source: "gemini" });
+        }
+      } catch (geminiErr: any) {
+        console.warn("Gemini API comparison fallback (quota or network):", geminiErr.message);
+      }
+    }
+
+    // Algorithmic Fallback Relative Strength Brief
+    const isAWinner = (metricsA?.volMultiple || 1) >= (metricsB?.volMultiple || 1);
+    const winnerSym = isAWinner ? symbolA : symbolB;
+    const runnerSym = isAWinner ? symbolB : symbolA;
+    const winMet = isAWinner ? metricsA : metricsB;
+    const runMet = isAWinner ? metricsB : metricsA;
+
+    const fallbackBrief = `• Relative Strength Winner: ${winnerSym} demonstrates superior short-term momentum with ${winMet?.volMultiple || 3}x volume expansion and strong ${winMet?.deliveryPct || 65}% delivery absorption.
+• Institutional Footprint: ${winnerSym} displays aggressive orderbook absorption backed by catalyst (${winMet?.reason || "Institutional Accumulation"}), whereas ${runnerSym} shows consolidation.
+• Risk/Reward Verdict: ${winnerSym} offers high probability BTST velocity toward resistance targets. Use trailing stop at ${runnerSym === winnerSym ? "intraday low" : "recent 3-day support"}.`;
+
+    return res.json({ brief: fallbackBrief, source: "algorithmic" });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // Start Server with Vite Middleware
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {

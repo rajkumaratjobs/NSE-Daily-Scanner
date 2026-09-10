@@ -128,6 +128,27 @@ export const AndroidFrame: React.FC<AndroidFrameProps> = ({
         >
           <div className="flex items-center justify-around">
             <button
+              id="tab-btst-surge"
+              onClick={() => onTabChange("btst")}
+              className={`flex flex-col items-center gap-1 py-1 px-3 rounded transition text-[11px] font-medium relative ${
+                activeTab === "btst"
+                  ? "text-amber-400 bg-amber-500/15 border border-amber-500/40 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              }`}
+            >
+              <div className="p-1">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span className="leading-none font-bold">BTST Surge</span>
+              <span className="absolute -top-1 right-1 px-1 py-0.2 rounded-full bg-amber-500 text-slate-950 font-black text-[8px]">
+                RADAR
+              </span>
+            </button>
+
+            <button
+              id="tab-jewellery-stocks"
               onClick={() => onTabChange("stocks")}
               className={`flex flex-col items-center gap-1 py-1 px-3 rounded transition text-[11px] font-medium ${
                 activeTab === "stocks"
@@ -144,6 +165,7 @@ export const AndroidFrame: React.FC<AndroidFrameProps> = ({
             </button>
 
             <button
+              id="tab-alerts"
               onClick={() => onTabChange("alerts")}
               className={`flex flex-col items-center gap-1 py-1 px-3 rounded transition text-[11px] font-medium relative ${
                 activeTab === "alerts"
@@ -165,6 +187,7 @@ export const AndroidFrame: React.FC<AndroidFrameProps> = ({
             </button>
 
             <button
+              id="tab-config"
               onClick={() => onTabChange("config")}
               className={`flex flex-col items-center gap-1 py-1 px-3 rounded transition text-[11px] font-medium ${
                 activeTab === "config"
@@ -181,6 +204,7 @@ export const AndroidFrame: React.FC<AndroidFrameProps> = ({
             </button>
 
             <button
+              id="tab-python"
               onClick={() => onTabChange("python")}
               className={`flex flex-col items-center gap-1 py-1 px-3 rounded transition text-[11px] font-medium ${
                 activeTab === "python"
